@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi PWA Instalable</title>
+    <!-- Enlace al archivo manifest.json -->
+    <link rel="manifest" href="manifest.json">
+    <!-- Icono para iOS (tamaño recomendado 180x180 para touch icon) -->
+    <link rel="apple-touch-icon" href="https://placehold.co/180x180/000000/FFFFFF?text=PWA">
+    <!-- Color del tema para la barra de estado del navegador en Android -->
+    <meta name="theme-color" content="#317EFB">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f0f4f8; /* Un color de fondo suave */
+        }
+    </style>
+</head>
+<body class="flex flex-col items-center justify-center min-h-screen bg-gray-100 p-4">
+    <div class="bg-white p-8 rounded-lg shadow-xl max-w-sm w-full text-center">
+        <h1 class="text-3xl font-bold text-gray-800 mb-6">¡Bienvenido a Mi PWA!</h1>
+        <p class="text-gray-600 mb-8">Presiona el botón para intentar instalar la aplicación en tu dispositivo.</p>
+        <button id="installButton" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50">
+            Instalar Aplicación
+        </button>
+        <p id="message" class="mt-4 text-gray-500 text-sm"></p>
+    </div>
+
+    <script>
+        // Variable para almacenar el evento beforeinstallprompt
+        let deferredPrompt;
+        const installButton = document.getElementById('installButton');
+        const messageElement = document.getElementById('message');
+
+        // Ocultar el botón de instalación por defecto
+        installButton.style.display = 'none';
+
+        // Escuchar el evento beforeinstallprompt
+        window.addEventListener('beforeinstallprompt', (e) => {
+            // Prevenir que el navegador muestre el prompt automáticamente
+            e.preventDefault();
+            // Almacenar el evento para activarlo después
+            deferredPrompt = e;
+            // Mostrar el botón de instalación
+            installButton.style.display = 'block';
+            messageElement.textContent = '¡La aplicación es instalable! Presiona el botón.';
+            console.log('beforeinstallprompt event fired.');
+        });
+
+        // Manejar el clic del botón de instalación
+        installButton.addEventListener('click', async () => {
+            if (deferredPrompt) {
+                // Mostrar el prompt de instalación
+                deferredPrompt.prompt();
+                // Esperar la elección del usuario
+                const { outcome } = await deferredPrompt.userChoice;
+                // Registrar el resultado de la elección del usuario
+                console.log(`El usuario eligió: ${outcome}`);
+
+                // Ocultar el botón de instalación después de mostrar el prompt
+                installButton.style.display = 'none';
+
+                if (outcome === 'accepted') {
+                    messageElement.textContent = '¡La aplicación ha sido instalada!';
+                    console.log('Usuario aceptó la instalación.');
+                } else {
+                    messageElement.textContent = 'Instalación cancelada.';
+                    console.log('Usuario rechazó la instalación.');
+                }
+                // Limpiar la referencia al evento
+                deferredPrompt = null;
+            } else {
+                messageElement.textContent = 'El botón de instalación solo aparece cuando la aplicación es instalable.';
+                console.log('deferredPrompt no está disponible. Asegúrate de que el evento beforeinstallprompt se haya disparado.');
+            }
+        });
+
+        // Registrar el Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/service-worker.js')
+                    .then((registration) => {
+                        console.log('Service Worker registrado con éxito:', registration);
+                    })
+                    .catch((error) => {
+                        console.error('Fallo al registrar el Service Worker:', error);
+                        messageElement.textContent = 'Error al registrar el Service Worker. La PWA podría no ser instalable.';
+                    });
+            });
+        } else {
+            messageElement.textContent = 'Tu navegador no soporta Service Workers. La PWA podría no ser instalable.';
+            console.warn('El navegador no soporta Service Workers.');
+        }
+
+        // Manejar el evento appinstalled (cuando la PWA ya ha sido instalada)
+        window.addEventListener('appinstalled', () => {
+            // Ocultar el botón si la app ya está instalada
+            installButton.style.display = 'none';
+            messageElement.textContent = '¡La aplicación ya está instalada!';
+            console.log('PWA instalada con éxito.');
+        });
+    </script>
+</body>
+</html>
