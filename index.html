@@ -84,13 +84,14 @@
         // Registrar el Service Worker
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/service-worker.js')
+                // CAMBIO AQUÍ: Usar una ruta relativa './service-worker.js'
+                navigator.serviceWorker.register('./service-worker.js')
                     .then((registration) => {
                         console.log('Service Worker registrado con éxito:', registration);
                     })
                     .catch((error) => {
                         console.error('Fallo al registrar el Service Worker:', error);
-                        messageElement.textContent = 'Error al registrar el Service Worker. La PWA podría no ser instalable.';
+                        messageElement.textContent = 'Error al registrar el Service Worker. La PWA podría no ser instalable. (Ver consola para más detalles)';
                     });
             });
         } else {
